@@ -4,9 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>박시현 | 침해사고대응 & 디지털포렌식 분석가</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-Thin.otf') format('opentype'); font-weight: 100; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-ExtraLight.otf') format('opentype'); font-weight: 200; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-Light.otf') format('opentype'); font-weight: 300; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-Regular.otf') format('opentype'); font-weight: 400; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-Medium.otf') format('opentype'); font-weight: 500; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-SemiBold.otf') format('opentype'); font-weight: 600; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-Bold.otf') format('opentype'); font-weight: 700; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-ExtraBold.otf') format('opentype'); font-weight: 800; }
+        @font-face { font-family: 'Pretendard'; src: url('Pretendard-Black.otf') format('opentype'); font-weight: 900; }
+
         :root {
             --primary: #1D4ED8;
             --primary-light: #3B82F6;
@@ -18,13 +26,14 @@
             --text-dark: #0F172A;
             --text-muted: #64748B;
             --sidebar-width: 280px;
+            --secret-panel-width: 360px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            font-family: 'Pretendard', -apple-system, sans-serif;
             background: var(--light-bg);
             color: var(--text-dark);
             line-height: 1.6;
@@ -33,6 +42,297 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: var(--light-bg); }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+
+        /* ===== SECRET NAV TRIGGER ===== */
+        .secret-nav-trigger {
+            width: 100%;
+            height: 20px;
+            cursor: default;
+            position: relative;
+        }
+        .secret-nav-trigger::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ===== SECRET OVERLAY ===== */
+        .secret-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0);
+            z-index: 600;
+            pointer-events: none;
+            transition: background 0.3s;
+        }
+        .secret-overlay.active {
+            background: rgba(0,0,0,0.5);
+            pointer-events: all;
+        }
+
+        /* ===== SECRET PANEL ===== */
+        .secret-panel {
+            position: fixed;
+            left: -380px;
+            top: 0;
+            width: var(--secret-panel-width);
+            height: 100vh;
+            background: #0A0F1E;
+            z-index: 700;
+            transition: left 0.4s cubic-bezier(0.22,1,0.36,1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .secret-panel.open { left: 0; }
+
+        .secret-panel-header {
+            padding: 32px 28px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+        }
+        .secret-panel-close {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 32px; height: 32px;
+            background: rgba(255,255,255,0.08);
+            border: none; border-radius: 8px;
+            color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .secret-panel-close:hover { background: rgba(255,255,255,0.16); }
+
+        .secret-lock-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, #1D4ED8, #3B82F6);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 14px;
+        }
+        .secret-panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .secret-panel-sub {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 400;
+        }
+
+        /* Password gate */
+        .secret-gate {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            gap: 16px;
+        }
+        .secret-gate-label {
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-align: center;
+        }
+        .secret-pin-dots {
+            display: flex;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .pin-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .pin-dot.filled {
+            background: var(--primary-light);
+            border-color: var(--primary-light);
+            box-shadow: 0 0 8px rgba(59,130,246,0.6);
+        }
+        .pin-dot.error {
+            background: #EF4444;
+            border-color: #EF4444;
+        }
+        .secret-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 240px;
+        }
+        .key-btn {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 500;
+            font-family: 'Pretendard', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .key-btn:hover { background: rgba(255,255,255,0.12); }
+        .key-btn:active { transform: scale(0.93); background: rgba(29,78,216,0.4); }
+        .key-btn.key-del { font-size: 14px; }
+        .key-btn.key-0 { grid-column: 2; }
+        .pin-error-msg {
+            font-size: 12px;
+            color: #EF4444;
+            font-weight: 500;
+            min-height: 18px;
+            text-align: center;
+        }
+
+        /* Secret content (unlocked) */
+        .secret-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 0 0 32px;
+        }
+        .secret-content.visible { display: flex; }
+        .secret-content::-webkit-scrollbar { width: 4px; }
+        .secret-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+        .ppt-hero {
+            padding: 28px 28px 20px;
+            background: linear-gradient(135deg, rgba(29,78,216,0.2) 0%, rgba(15,23,42,0) 60%);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .ppt-hero-tag {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary-light);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .ppt-hero-name {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+        .ppt-hero-title {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 400;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .ppt-stats {
+            display: flex;
+            gap: 20px;
+        }
+        .ppt-stat {
+            text-align: left;
+        }
+        .ppt-stat-num {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-light);
+            display: block;
+            line-height: 1;
+        }
+        .ppt-stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .ppt-stat-sep {
+            width: 1px;
+            background: rgba(255,255,255,0.1);
+            align-self: stretch;
+        }
+
+        .ppt-section {
+            padding: 20px 28px 0;
+        }
+        .ppt-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .ppt-slide-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .ppt-slide-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .ppt-slide-item:hover {
+            background: rgba(29,78,216,0.15);
+            border-color: rgba(59,130,246,0.3);
+        }
+        .ppt-slide-num {
+            width: 24px; height: 24px;
+            background: rgba(29,78,216,0.4);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary-light);
+            flex-shrink: 0;
+        }
+        .ppt-slide-info { flex: 1; }
+        .ppt-slide-chapter {
+            font-size: 10px;
+            color: rgba(255,255,255,0.35);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .ppt-slide-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.4;
+        }
+        .ppt-slide-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 3px;
+            line-height: 1.5;
+        }
+
+        .ppt-note {
+            margin: 16px 28px 0;
+            background: rgba(29,78,216,0.12);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+        }
+        .ppt-note strong { color: var(--primary-light); }
 
         /* ===== SIDEBAR ===== */
         .sidebar {
@@ -54,36 +354,35 @@
         }
 
         .profile-avatar {
-            width: 140px;
-            height: 140px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 14px;
-            border: 4px solid #fff;
-            box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.18), 0 8px 24px rgba(29, 78, 216, 0.2);
+            margin: 0 auto 12px;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18), 0 8px 24px rgba(29, 78, 216, 0.2);
             overflow: hidden;
-            background: #acaeb5;
+            background: #c8cad0;
         }
 
         .profile-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            object-position: center;
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
         }
 
         .sidebar-name {
-            font-size: 19px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--text-dark);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             text-align: center;
+            letter-spacing: -0.3px;
         }
 
         .typewriter-wrapper {
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--primary);
             font-weight: 600;
             min-height: 18px;
@@ -92,30 +391,27 @@
 
         .sidebar-divider { height: 1px; background: var(--light-border); }
 
-        .sidebar-info { display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-info { display: flex; flex-direction: column; gap: 7px; }
 
         .info-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--text-muted);
             word-break: break-all;
         }
 
         .info-icon {
-            width: 30px;
-            height: 30px;
+            width: 28px; height: 28px;
             background: var(--primary-bg);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
             color: var(--primary);
             flex-shrink: 0;
         }
 
-        .sidebar-nav { display: flex; flex-direction: column; gap: 3px; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
 
         .nav-item {
             display: flex;
@@ -146,18 +442,18 @@
 
         /* ===== SECTION ===== */
         .section {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             background: var(--light-card);
             border-radius: 20px;
             border: 1px solid var(--light-border);
             overflow: hidden;
         }
 
-        .section-inner { padding: 44px; }
+        .section-inner { padding: 40px 44px; }
 
         .section-tag {
             display: inline-block;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             color: var(--primary);
             background: var(--primary-bg);
@@ -169,25 +465,26 @@
         }
 
         .section-title {
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 800;
             color: var(--text-dark);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             line-height: 1.2;
+            letter-spacing: -0.5px;
         }
 
         .section-title span { color: var(--primary); }
 
         .section-subtitle {
-            font-size: 14px;
+            font-size: 13.5px;
             color: var(--text-muted);
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             line-height: 1.7;
         }
 
         /* ===== HOME ===== */
         #home {
-            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 60%, #EFF6FF 100%);
+            background: linear-gradient(140deg, #EFF6FF 0%, #DBEAFE 55%, #EEF2FF 100%);
             position: relative;
             overflow: hidden;
         }
@@ -195,37 +492,62 @@
         #home::before {
             content: '';
             position: absolute;
-            top: -120px; right: -120px;
-            width: 450px; height: 450px;
-            background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%);
+            top: -100px; right: -100px;
+            width: 380px; height: 380px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
             pointer-events: none;
         }
 
         #home::after {
             content: '';
             position: absolute;
-            bottom: -80px; left: -60px;
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(29,78,216,0.12) 0%, transparent 70%);
+            bottom: -60px; left: -50px;
+            width: 260px; height: 260px;
+            background: radial-gradient(circle, rgba(29,78,216,0.1) 0%, transparent 70%);
             pointer-events: none;
         }
 
         .home-inner { position: relative; z-index: 1; }
 
-        .home-name {
-            font-size: 52px;
-            font-weight: 800;
-            color: var(--text-dark);
-            margin-bottom: 10px;
-            line-height: 1.1;
-            letter-spacing: -1px;
+        .home-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(29,78,216,0.08);
+            border: 1px solid rgba(29,78,216,0.15);
+            padding: 5px 13px;
+            border-radius: 20px;
+            margin-bottom: 18px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .home-eyebrow-dot {
+            width: 6px; height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
         }
 
+        .home-name {
+            font-size: 50px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+        }
 
         .home-title {
-            font-size: 17px;
+            font-size: 16px;
             color: var(--text-muted);
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             font-weight: 500;
         }
 
@@ -233,24 +555,26 @@
             font-size: 14px;
             color: var(--text-muted);
             line-height: 1.9;
-            max-width: 540px;
-            margin-bottom: 32px;
+            max-width: 520px;
+            margin-bottom: 28px;
         }
 
-        .home-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+        .home-cta { display: flex; gap: 10px; flex-wrap: wrap; }
 
         .btn-primary {
-            padding: 11px 26px;
+            padding: 11px 24px;
             background: var(--primary);
             color: white;
             border-radius: 10px;
             text-decoration: none;
             font-weight: 700;
             font-size: 13px;
+            font-family: 'Pretendard', sans-serif;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 7px;
+            letter-spacing: -0.1px;
         }
 
         .btn-primary:hover {
@@ -260,7 +584,7 @@
         }
 
         .btn-secondary {
-            padding: 11px 26px;
+            padding: 11px 24px;
             background: transparent;
             color: var(--primary);
             border: 2px solid var(--primary);
@@ -268,6 +592,7 @@
             text-decoration: none;
             font-weight: 700;
             font-size: 13px;
+            font-family: 'Pretendard', sans-serif;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
@@ -278,26 +603,29 @@
 
         .home-stats {
             display: flex;
-            gap: 28px;
-            margin-top: 36px;
+            gap: 24px;
+            margin-top: 32px;
             flex-wrap: wrap;
+            padding-top: 24px;
+            border-top: 1px solid rgba(29,78,216,0.1);
         }
 
         .stat-item { text-align: left; }
 
         .stat-number {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 800;
             color: var(--primary);
             display: block;
             line-height: 1;
+            letter-spacing: -0.5px;
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 10.5px;
             color: var(--text-muted);
             font-weight: 600;
-            margin-top: 3px;
+            margin-top: 4px;
         }
 
         .stat-sep {
@@ -310,14 +638,14 @@
         .competency-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
+            gap: 12px;
         }
 
         .competency-card {
             background: var(--light-bg);
             border: 1px solid var(--light-border);
             border-radius: 14px;
-            padding: 20px;
+            padding: 18px;
             transition: all 0.2s;
             cursor: pointer;
         }
@@ -329,14 +657,12 @@
         }
 
         .competency-icon {
-            width: 40px; height: 40px;
+            width: 38px; height: 38px;
             background: var(--primary-bg);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
             color: var(--primary);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .competency-title {
@@ -344,6 +670,7 @@
             font-weight: 700;
             color: var(--text-dark);
             margin-bottom: 6px;
+            letter-spacing: -0.2px;
         }
 
         .competency-desc {
@@ -352,24 +679,11 @@
             line-height: 1.7;
         }
 
-        .competency-desc a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .competency-desc a:hover {
-            color: var(--primary-light);
-            text-decoration: underline;
-        }
-
         /* ===== RESUME TABS ===== */
         .resume-tabs {
             display: flex;
-            gap: 4px;
-            margin-bottom: 28px;
+            gap: 2px;
+            margin-bottom: 26px;
             border-bottom: 2px solid var(--light-border);
         }
 
@@ -385,8 +699,9 @@
             bottom: -2px;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
-            font-family: 'Noto Sans KR', sans-serif;
+            font-family: 'Pretendard', sans-serif;
             border-radius: 6px 6px 0 0;
+            letter-spacing: -0.1px;
         }
 
         .tab-btn:hover { color: var(--primary); }
@@ -422,8 +737,7 @@
 
         .timeline-dot {
             position: absolute;
-            left: -25px;
-            top: 5px;
+            left: -25px; top: 5px;
             width: 12px; height: 12px;
             border-radius: 50%;
             background: var(--primary);
@@ -433,7 +747,7 @@
 
         .timeline-period {
             display: inline-block;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             color: var(--primary);
             background: var(--primary-bg);
@@ -459,6 +773,7 @@
             font-weight: 700;
             color: var(--text-dark);
             margin-bottom: 3px;
+            letter-spacing: -0.2px;
         }
 
         .timeline-org {
@@ -481,18 +796,15 @@
         .awards-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            gap: 10px;
         }
 
         .award-card {
             background: var(--light-bg);
             border: 1px solid var(--light-border);
             border-radius: 12px;
-            padding: 16px;
+            padding: 14px 16px;
             transition: all 0.2s;
-            display: grid;
-            grid-template-rows: auto auto;
-            gap: 8px;
         }
 
         .award-card:hover {
@@ -505,29 +817,12 @@
             font-size: 12px;
             font-weight: 700;
             color: var(--primary);
-            background: transparent;
-            padding: 0;
-            border-radius: 0;
-            margin-bottom: 0;
-            display: block;
-        }
-
-        .award-type {
-            font-size: 10px;
-            font-weight: 700;
-            color: white;
-            background: var(--primary);
-            padding: 3px 8px;
-            border-radius: 4px;
-            display: inline-block;
-            text-align: right;
         }
 
         .award-title {
             font-size: 13px;
             font-weight: 600;
             color: var(--text-dark);
-            margin-bottom: 4px;
             line-height: 1.4;
         }
 
@@ -536,21 +831,20 @@
             color: var(--text-muted);
         }
 
-        /* ===== RESEARCH CARDS ===== */
+        /* ===== RESEARCH ===== */
         .research-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 16px;
+            gap: 14px;
         }
 
         .research-card {
             background: var(--light-bg);
             border: 1px solid var(--light-border);
             border-radius: 14px;
-            padding: 20px;
+            padding: 18px 20px;
             transition: all 0.3s;
             cursor: pointer;
-            position: relative;
         }
 
         .research-card:hover {
@@ -565,75 +859,71 @@
             opacity: 0;
             transition: all 0.4s ease;
             margin-bottom: 0;
-            width: 100%;
-            height: 0;
         }
 
         .research-image.show {
             max-height: 300px;
             opacity: 1;
-            margin-bottom: 16px;
-            height: auto;
+            margin-bottom: 14px;
         }
 
         .research-image-wrapper {
             width: 100%;
-            height: 240px;
+            height: 220px;
             background: linear-gradient(135deg, var(--primary-bg) 0%, #E0E7FF 100%);
-            border-radius: 10px;
+            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--primary);
             font-size: 12px;
-            text-align: center;
-            padding: 16px;
         }
 
         .research-period {
             display: inline-block;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             color: var(--primary);
             background: var(--primary-bg);
             padding: 3px 10px;
             border-radius: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .research-title {
-            font-size: 15px;
+            font-size: 14.5px;
             font-weight: 700;
             color: var(--text-dark);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             line-height: 1.4;
+            letter-spacing: -0.2px;
         }
 
         .research-org {
-            font-size: 13px;
+            font-size: 12.5px;
             color: var(--primary-light);
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .research-desc {
-            font-size: 13px;
+            font-size: 12.5px;
             color: var(--text-muted);
-            line-height: 1.7;
+            line-height: 1.75;
         }
 
         /* ===== CONTACT ===== */
         .contact-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
+            gap: 12px;
         }
 
         .contact-card {
             background: var(--light-bg);
             border: 1px solid var(--light-border);
             border-radius: 14px;
-            padding: 24px;
+            padding: 22px;
             text-align: center;
             text-decoration: none;
             color: inherit;
@@ -647,18 +937,16 @@
         }
 
         .contact-icon {
-            width: 48px; height: 48px;
+            width: 44px; height: 44px;
             background: var(--primary-bg);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 12px;
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px;
             color: var(--primary);
         }
 
         .contact-label {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
@@ -686,17 +974,14 @@
             border-bottom: 1px solid var(--light-border);
         }
 
-        .mobile-logo { font-size: 17px; font-weight: 700; color: var(--text-dark); }
+        .mobile-logo { font-size: 16px; font-weight: 700; color: var(--text-dark); }
 
         .hamburger {
-            width: 38px; height: 38px;
+            width: 36px; height: 36px;
             background: var(--primary-bg);
-            border-radius: 9px;
-            border: none;
+            border-radius: 9px; border: none;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             color: var(--primary);
         }
 
@@ -727,7 +1012,7 @@
         .close-btn {
             position: absolute;
             top: 14px; right: 14px;
-            width: 34px; height: 34px;
+            width: 32px; height: 32px;
             background: var(--light-bg);
             border: none; border-radius: 50%;
             cursor: pointer;
@@ -745,25 +1030,21 @@
             position: absolute;
             background: var(--primary);
             border-radius: 50%;
-            opacity: 0.25;
+            opacity: 0.2;
             animation: floatUp linear infinite;
         }
 
         @keyframes floatUp {
             from { transform: translateY(120%); opacity: 0; }
-            10% { opacity: 0.25; }
-            90% { opacity: 0.25; }
+            10% { opacity: 0.2; }
+            90% { opacity: 0.2; }
             to { transform: translateY(-120%); opacity: 0; }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 1100px) {
             .sidebar { display: none; }
+            .secret-trigger { display: none; }
             .mobile-header { display: flex; }
             .mobile-sidebar { display: block; }
             .main-content {
@@ -774,18 +1055,185 @@
         }
 
         @media (max-width: 640px) {
-            .section-inner { padding: 26px 18px; }
+            .section-inner { padding: 24px 18px; }
             .section-title { font-size: 22px; }
             .home-name { font-size: 36px; }
             .competency-grid,
             .awards-grid,
             .contact-grid { grid-template-columns: 1fr; }
-            .home-stats { gap: 18px; }
+            .home-stats { gap: 16px; }
             .resume-tabs { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
+
+<!-- Secret overlay -->
+<div class="secret-overlay" id="secretOverlay" onclick="closeSecretPanel()"></div>
+
+<!-- Secret Panel -->
+<div class="secret-panel" id="secretPanel">
+    <div class="secret-panel-header">
+        <button class="secret-panel-close" onclick="closeSecretPanel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="secret-lock-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="22" height="22">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+        </div>
+        <div class="secret-panel-title">비공개 구역</div>
+        <div class="secret-panel-sub">PIN을 입력하여 접근하세요</div>
+    </div>
+
+    <!-- Password Gate -->
+    <div class="secret-gate" id="secretGate">
+        <div class="secret-gate-label">4자리 비밀번호 입력</div>
+        <div class="secret-pin-dots">
+            <div class="pin-dot" id="dot0"></div>
+            <div class="pin-dot" id="dot1"></div>
+            <div class="pin-dot" id="dot2"></div>
+            <div class="pin-dot" id="dot3"></div>
+        </div>
+        <div class="pin-error-msg" id="pinError"></div>
+        <div class="secret-keypad">
+            <button class="key-btn" onclick="pressKey('1')">1</button>
+            <button class="key-btn" onclick="pressKey('2')">2</button>
+            <button class="key-btn" onclick="pressKey('3')">3</button>
+            <button class="key-btn" onclick="pressKey('4')">4</button>
+            <button class="key-btn" onclick="pressKey('5')">5</button>
+            <button class="key-btn" onclick="pressKey('6')">6</button>
+            <button class="key-btn" onclick="pressKey('7')">7</button>
+            <button class="key-btn" onclick="pressKey('8')">8</button>
+            <button class="key-btn" onclick="pressKey('9')">9</button>
+            <button class="key-btn key-0" onclick="pressKey('0')">0</button>
+            <button class="key-btn key-del" onclick="deleteKey()">⌫</button>
+        </div>
+    </div>
+
+    <!-- Secret Content (unlocked) -->
+    <div class="secret-content" id="secretContent">
+        <div class="ppt-hero">
+            <div class="ppt-hero-tag">✦ Self Introduction PPT</div>
+            <div class="ppt-hero-name">박시현</div>
+            <div class="ppt-hero-title">침해사고대응 & 디지털포렌식 분석가<br>SK텔레콤 통합보안센터</div>
+            <div class="ppt-stats">
+                <div class="ppt-stat">
+                    <span class="ppt-stat-num">2+</span>
+                    <div class="ppt-stat-label">년 실무 경력</div>
+                </div>
+                <div class="ppt-stat-sep"></div>
+                <div class="ppt-stat">
+                    <span class="ppt-stat-num">8+</span>
+                    <div class="ppt-stat-label">수상 이력</div>
+                </div>
+                <div class="ppt-stat-sep"></div>
+                <div class="ppt-stat">
+                    <span class="ppt-stat-num">5+</span>
+                    <div class="ppt-stat-label">국가 연구과제</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ppt-section">
+            <div class="ppt-section-title">슬라이드 구성</div>
+            <div class="ppt-slide-list">
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">01</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Cover</div>
+                        <div class="ppt-slide-name">표지</div>
+                        <div class="ppt-slide-desc">이름 · 직책 · 소속 · 날짜</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">02</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Chapter 1 — About Me</div>
+                        <div class="ppt-slide-name">자기소개</div>
+                        <div class="ppt-slide-desc">한 줄 소개 · 핵심 역량 · 지향점</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">03</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Chapter 2 — Career</div>
+                        <div class="ppt-slide-name">경력 사항</div>
+                        <div class="ppt-slide-desc">SK텔레콤 · 안랩 실무 경력</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">04</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Chapter 3 — Education</div>
+                        <div class="ppt-slide-name">학력 및 연구</div>
+                        <div class="ppt-slide-desc">성균관대 석사 (4.5/4.5) · 상명대 학사 조기졸업</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">05</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Chapter 4 — Research</div>
+                        <div class="ppt-slide-name">연구 & 프로젝트</div>
+                        <div class="ppt-slide-desc">국가 연구과제 5건 · 논문 · TTA 표준</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">06</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Chapter 5 — Awards</div>
+                        <div class="ppt-slide-name">수상 & 교육 이수</div>
+                        <div class="ppt-slide-desc">해양경찰청장상 · 버그바운티 최우수상 외 8건</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num">07</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-chapter">Closing</div>
+                        <div class="ppt-slide-name">마무리 & 연락처</div>
+                        <div class="ppt-slide-desc">비전 · 이메일 · Q&A</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ppt-note">
+            <strong>📌 Note</strong><br>
+            Brandlogy 로고 · Pretendard 폰트 적용 예정.<br>
+            16:9 슬라이드 · 매 페이지 동일 레이아웃 그리드 사용.
+        </div>
+
+        <div class="ppt-section" style="margin-top: 16px;">
+            <div class="ppt-section-title">디자인 시스템 메모</div>
+            <div class="ppt-slide-list">
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num" style="font-size:9px; padding: 4px;">Font</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-name">Pretendard 전용</div>
+                        <div class="ppt-slide-desc">Thin ~ Black 9단계 · 타 폰트 사용 금지</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num" style="font-size:9px; padding: 4px;">Grid</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-name">16:9 고정 · 일관된 여백</div>
+                        <div class="ppt-slide-desc">챕터명 · 제목 · 부제목 매 페이지 동일 위치</div>
+                    </div>
+                </div>
+                <div class="ppt-slide-item">
+                    <div class="ppt-slide-num" style="font-size:9px; padding: 4px;">Density</div>
+                    <div class="ppt-slide-info">
+                        <div class="ppt-slide-name">본문 하단 밀도 있게 채우기</div>
+                        <div class="ppt-slide-desc">빈 공간 최소화 · 디자인 훼손 없는 선에서</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Mobile Header -->
 <header class="mobile-header">
@@ -802,7 +1250,7 @@
 
 <!-- Mobile Sidebar -->
 <div class="mobile-sidebar" id="mobileSidebar">
-    <button class="close-btn" onclick="toggleMenu()" aria-label="닫기">
+    <button class="close-btn" onclick="toggleMenu()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
             <path d="M18 6L6 18M6 6l12 12"/>
         </svg>
@@ -841,7 +1289,7 @@
     <div class="sidebar-info">
         <div class="info-item">
             <div class="info-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                 </svg>
@@ -866,6 +1314,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>연락처
         </a>
     </nav>
+
+    <!-- Hidden trigger: click 3 times to open -->
+    <div class="secret-nav-trigger" id="secretNavTrigger" onclick="handleSecretTap()"></div>
 </aside>
 
 <!-- Main Content -->
@@ -875,6 +1326,10 @@
     <section class="section" id="home">
         <div class="particles" id="particles"></div>
         <div class="section-inner home-inner">
+            <div class="home-eyebrow">
+                <div class="home-eyebrow-dot"></div>
+                Available for opportunities
+            </div>
             <h1 class="home-name">박시현</h1>
             <div class="home-title">침해사고대응 & 디지털포렌식 분석가</div>
             <p class="home-desc">
@@ -905,6 +1360,11 @@
                     <span class="stat-number">5+</span>
                     <span class="stat-label">국가 연구과제</span>
                 </div>
+                <div class="stat-sep"></div>
+                <div class="stat-item">
+                    <span class="stat-number">4.5</span>
+                    <span class="stat-label">석사 학점</span>
+                </div>
             </div>
         </div>
     </section>
@@ -924,7 +1384,7 @@
                             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                         </svg>
                     </div>
-                    <div class="competency-title">포렌식 & 침해사고 분석 역량</div>
+                    <div class="competency-title">포렌식 & 침해사고 분석</div>
                     <div class="competency-desc">고객사 환경의 로그·아티팩트 분석 경험<br/>대응의 전주기(인터뷰→분석→보고→개선) 경험<br/>CTI 기반 위협 헌팅과 MITRE ATT&CK 매핑</div>
                 </div>
                 <div class="competency-card" onclick="showTab('research', document.querySelector('.tab-btn:nth-child(3)')); window.location.hash='#resume';">
@@ -933,7 +1393,7 @@
                             <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
                         </svg>
                     </div>
-                    <div class="competency-title">AI 활용 및 개발 역량</div>
+                    <div class="competency-title">AI 활용 및 개발</div>
                     <div class="competency-desc">AI 기반 모델 설계·연구로 자동화 탐구<br/>실무에서 분석 도구 개발 및 효율 개선<br/>보안 도메인 이해로 실제 문제 해결 적용</div>
                 </div>
                 <div class="competency-card" onclick="showTab('research', document.querySelector('.tab-btn:nth-child(3)')); window.location.hash='#resume';">
@@ -944,7 +1404,7 @@
                             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
                         </svg>
                     </div>
-                    <div class="competency-title">소통&협업 능력</div>
+                    <div class="competency-title">소통 & 협업 능력</div>
                     <div class="competency-desc">팀 프로젝트와 학생회장 경험의 협업 능력<br/>보고서·발표·교육 등 다양한 형태 전달에 능숙<br/>기술을 조직이 이해·적용할 수 있게 변환</div>
                 </div>
                 <div class="competency-card" onclick="showTab('awards', document.querySelectorAll('.tab-btn')[3]); window.location.hash='#resume';">
@@ -953,8 +1413,8 @@
                             <path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/>
                         </svg>
                     </div>
-                    <div class="competency-title">성과 & 문제 해결 능력</div>
-                    <div class="competency-desc">포렌식 분야 심화부터 AI, 취약점 분석까지 영역 확장<br/>교육 수료와 다수 수상·학술 발표로 실력 입증<br/>새로운 분야를 빠르게 파악·구조화·실전 적용</div>
+                    <div class="competency-title">성과 & 문제 해결</div>
+                    <div class="competency-desc">포렌식 심화부터 AI, 취약점 분석까지 영역 확장<br/>교육 수료와 다수 수상·학술 발표로 실력 입증<br/>새로운 분야를 빠르게 파악·구조화·실전 적용</div>
                 </div>
             </div>
         </div>
@@ -1043,9 +1503,7 @@
             <div class="tab-content" id="tab-research">
                 <div class="research-grid">
                     <div class="research-card" onclick="toggleResearchImage(this)">
-                        <div class="research-image">
-                            <div class="research-image-wrapper">사진 영역</div>
-                        </div>
+                        <div class="research-image"><div class="research-image-wrapper">사진 영역</div></div>
                         <div class="research-period">2024.03 ~ 2024.12</div>
                         <div class="research-title">디지털 환경에서의 증거인멸행위 증명 및 대응 기술 개발</div>
                         <div class="research-org">과학기술정보통신부 연구과제</div>
@@ -1055,9 +1513,7 @@
                         </div>
                     </div>
                     <div class="research-card" onclick="toggleResearchImage(this)">
-                        <div class="research-image">
-                            <div class="research-image-wrapper">사진 영역</div>
-                        </div>
+                        <div class="research-image"><div class="research-image-wrapper">사진 영역</div></div>
                         <div class="research-period">2023.12 ~ 2024.12</div>
                         <div class="research-title">의료영상 디지털포렌식 기술 개발</div>
                         <div class="research-org">한국연구재단 연구과제</div>
@@ -1068,9 +1524,7 @@
                         </div>
                     </div>
                     <div class="research-card" onclick="toggleResearchImage(this)">
-                        <div class="research-image">
-                            <div class="research-image-wrapper">사진 영역</div>
-                        </div>
+                        <div class="research-image"><div class="research-image-wrapper">사진 영역</div></div>
                         <div class="research-period">2024.01 ~ 2024.12</div>
                         <div class="research-title">클라우드 환경의 데이터 획득·분석 기술 연구</div>
                         <div class="research-org">대검찰청 연구과제</div>
@@ -1080,9 +1534,7 @@
                         </div>
                     </div>
                     <div class="research-card" onclick="toggleResearchImage(this)">
-                        <div class="research-image">
-                            <div class="research-image-wrapper">사진 영역</div>
-                        </div>
+                        <div class="research-image"><div class="research-image-wrapper">사진 영역</div></div>
                         <div class="research-period">2024.01 ~ 2024.12</div>
                         <div class="research-title">방글라데시 · 네팔 사이버수사 역량강화 사업</div>
                         <div class="research-org">KOICA (한국국제협력단)</div>
@@ -1091,9 +1543,7 @@
                         </div>
                     </div>
                     <div class="research-card" onclick="toggleResearchImage(this)">
-                        <div class="research-image">
-                            <div class="research-image-wrapper">사진 영역</div>
-                        </div>
+                        <div class="research-image"><div class="research-image-wrapper">사진 영역</div></div>
                         <div class="research-period">2024.03 ~ 2024.11</div>
                         <div class="research-title">디지털포렌식 연구</div>
                         <div class="research-org">국가기관</div>
@@ -1104,71 +1554,71 @@
 
             <!-- 수상 & 교육 -->
             <div class="tab-content" id="tab-awards">
-                <h3 style="font-size: 15px; font-weight: 700; color: var(--text-dark); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 2px solid var(--light-border);">수상</h3>
+                <h3 style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--light-border);">수상</h3>
                 <div class="awards-grid">
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">2024 한국디지털포렌식학회<br/>동계학술대회 우수 논문</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">2024 한국디지털포렌식학회<br/>동계학술대회 우수 논문</div>
                             <div class="award-badge">해양경찰청장상</div>
                         </div>
                         <div class="award-org">한국디지털포렌식학회 · 2024.12</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">2024 KDFS 챌린지</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">2024 KDFS 챌린지</div>
                             <div class="award-badge">우수상</div>
                         </div>
                         <div class="award-org">한국디지털포렌식학회 · 2024.12</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">제8회 성균관대학교 버그바운티</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">제8회 성균관대학교 버그바운티</div>
                             <div class="award-badge">우수상</div>
                         </div>
                         <div class="award-org">성균관대학교 정보통신처 · 2024.11</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">제7회 성균관대학교 버그바운티</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">제7회 성균관대학교 버그바운티</div>
                             <div class="award-badge">최우수상</div>
                         </div>
                         <div class="award-org">성균관대학교 정보통신처 · 2023.12</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">2023 사이버안보 논문 공모전</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">2023 사이버안보 논문 공모전</div>
                             <div class="award-badge">장려상</div>
                         </div>
                         <div class="award-org">한국사이버안보학회 · 2023.10</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">캡스톤디자인 경진대회</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">캡스톤디자인 경진대회</div>
                             <div class="award-badge">우수상</div>
                         </div>
                         <div class="award-org">상명대학교 · 2023.07</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">GDSC Sangmyung Hackathon 2022</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">GDSC Sangmyung Hackathon 2022</div>
                             <div class="award-badge">대상</div>
                         </div>
                         <div class="award-org">Google Developer Student Clubs · 2022.07</div>
                     </div>
                 </div>
 
-                <h3 style="font-size: 15px; font-weight: 700; color: var(--text-dark); margin: 28px 0 16px; padding-bottom: 10px; border-bottom: 2px solid var(--light-border);">교육</h3>
+                <h3 style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin: 24px 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--light-border);">교육</h3>
                 <div class="awards-grid">
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">금융보안 아카데미 2기<br/>(AI/빅데이터 분야)</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">금융보안 아카데미 2기<br/>(AI/빅데이터 분야)</div>
                             <div class="award-badge">최우수 수료</div>
                         </div>
                         <div class="award-org">금융보안원 · 2024.10</div>
                     </div>
                     <div class="award-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
-                            <div class="award-title" style="flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--text-dark);">금융보안 아카데미 1기<br/>(사이버 침해 위협분석·대응)</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px;">
+                            <div class="award-title" style="flex: 1; font-size: 13px; font-weight: 600; color: var(--text-dark);">금융보안 아카데미 1기<br/>(사이버 침해 위협분석·대응)</div>
                             <div class="award-badge">우수 수료</div>
                         </div>
                         <div class="award-org">금융보안원 · 2023.10</div>
@@ -1203,32 +1653,22 @@
 </main>
 
 <script>
-    // Typewriter
+    // ===== TYPEWRITER =====
     const texts = ['침해사고대응 분석가', '디지털포렌식 분석가', 'Threat Hunter', '보안 분석가'];
     let ti = 0, ci = 0, del = false;
     const tw = document.getElementById('typewriter');
 
     function typewrite() {
         const cur = texts[ti];
-        if (del) {
-            tw.textContent = cur.substring(0, ci - 1);
-            ci--;
-        } else {
-            tw.textContent = cur.substring(0, ci + 1);
-            ci++;
-        }
-        if (!del && ci === cur.length) {
-            setTimeout(() => { del = true; typewrite(); }, 2200);
-            return;
-        } else if (del && ci === 0) {
-            del = false;
-            ti = (ti + 1) % texts.length;
-        }
+        if (del) { tw.textContent = cur.substring(0, ci - 1); ci--; }
+        else { tw.textContent = cur.substring(0, ci + 1); ci++; }
+        if (!del && ci === cur.length) { setTimeout(() => { del = true; typewrite(); }, 2200); return; }
+        else if (del && ci === 0) { del = false; ti = (ti + 1) % texts.length; }
         setTimeout(typewrite, del ? 55 : 105);
     }
     typewrite();
 
-    // Tab switching
+    // ===== TABS =====
     function showTab(name, btn) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1236,42 +1676,34 @@
         btn.classList.add('active');
     }
 
-    // Toggle research image
+    // ===== RESEARCH =====
     function toggleResearchImage(card) {
         const image = card.querySelector('.research-image');
-        // 같은 카드 내의 다른 이미지는 닫기
-        const allCards = document.querySelectorAll('.research-card');
-        allCards.forEach(c => {
-            if (c !== card) {
-                c.querySelector('.research-image').classList.remove('show');
-            }
+        document.querySelectorAll('.research-card').forEach(c => {
+            if (c !== card) c.querySelector('.research-image').classList.remove('show');
         });
-        // 현재 이미지 토글
         image.classList.toggle('show');
     }
 
-    // Mobile menu
+    // ===== MOBILE MENU =====
     function toggleMenu() {
         document.getElementById('mobileSidebar').classList.toggle('open');
         document.getElementById('mobileOverlay').classList.toggle('open');
     }
 
-    // Active nav on scroll
+    // ===== ACTIVE NAV =====
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('.nav-item');
-
     window.addEventListener('scroll', () => {
         const y = window.scrollY + 120;
         sections.forEach(s => {
             if (y >= s.offsetTop && y < s.offsetTop + s.offsetHeight) {
-                navLinks.forEach(a => {
-                    a.classList.toggle('active', a.getAttribute('href') === '#' + s.id);
-                });
+                navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + s.id));
             }
         });
     });
 
-    // Particles
+    // ===== PARTICLES =====
     const pc = document.getElementById('particles');
     for (let i = 0; i < 18; i++) {
         const p = document.createElement('div');
@@ -1279,6 +1711,81 @@
         p.style.cssText = `left:${Math.random()*100}%;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*16}s;`;
         pc.appendChild(p);
     }
+
+    // ===== SECRET PANEL =====
+    let pinInput = '';
+    const CORRECT_PIN = '1201';
+    let secretTapCount = 0;
+    let secretTapTimer = null;
+
+    function handleSecretTap() {
+        secretTapCount++;
+        clearTimeout(secretTapTimer);
+        secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 800);
+        if (secretTapCount >= 3) {
+            secretTapCount = 0;
+            openSecretPanel();
+        }
+    }
+
+    function openSecretPanel() {
+        document.getElementById('secretPanel').classList.add('open');
+        document.getElementById('secretOverlay').classList.add('active');
+    }
+
+    function closeSecretPanel() {
+        document.getElementById('secretPanel').classList.remove('open');
+        document.getElementById('secretOverlay').classList.remove('active');
+    }
+
+    function pressKey(digit) {
+        if (pinInput.length >= 4) return;
+        pinInput += digit;
+        updateDots();
+        if (pinInput.length === 4) {
+            setTimeout(checkPin, 150);
+        }
+    }
+
+    function deleteKey() {
+        if (pinInput.length === 0) return;
+        pinInput = pinInput.slice(0, -1);
+        updateDots();
+        document.getElementById('pinError').textContent = '';
+    }
+
+    function updateDots(state) {
+        for (let i = 0; i < 4; i++) {
+            const dot = document.getElementById('dot' + i);
+            dot.className = 'pin-dot';
+            if (state === 'error') dot.classList.add('error');
+            else if (i < pinInput.length) dot.classList.add('filled');
+        }
+    }
+
+    function checkPin() {
+        if (pinInput === CORRECT_PIN) {
+            document.getElementById('secretGate').style.display = 'none';
+            document.getElementById('secretContent').classList.add('visible');
+        } else {
+            updateDots('error');
+            document.getElementById('pinError').textContent = '잘못된 비밀번호입니다';
+            setTimeout(() => {
+                pinInput = '';
+                updateDots();
+                document.getElementById('pinError').textContent = '';
+            }, 1000);
+        }
+    }
+
+    // Keyboard support for PIN
+    document.addEventListener('keydown', (e) => {
+        const panel = document.getElementById('secretPanel');
+        if (!panel.classList.contains('open')) return;
+        if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+        if (e.key === 'Backspace') deleteKey();
+        if (e.key === 'Escape') closeSecretPanel();
+    });
 </script>
 </body>
 </html>
